@@ -23,7 +23,6 @@ import {
   DocumentItem,
   AnalyseResponse,
   CompareResponse,
-  CitationItem,
   DocumentPage,
 } from "@/lib/api";
 
@@ -53,7 +52,6 @@ export default function ProofLensDashboard() {
   const [question, setQuestion] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyseResponse | null>(null);
-  const [activeCitation, setActiveCitation] = useState<CitationItem | null>(null);
 
   // Comparison State
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
@@ -226,7 +224,6 @@ export default function ProofLensDashboard() {
     if (!activeWorkspace || !question.trim()) return;
     try {
       setIsAnalysing(true);
-      setActiveCitation(null);
       const res = await api.analyse(activeWorkspace.id, question.trim(), 5);
       setAnalysisResult(res);
     } catch (err: unknown) {
@@ -468,60 +465,9 @@ export default function ProofLensDashboard() {
                       Grounded Answer
                     </h3>
                     <div className="prose prose-invert max-w-none text-sm text-zinc-200 leading-relaxed bg-zinc-950/50 p-5 rounded-xl border border-zinc-800/60 whitespace-pre-wrap">
-                      {analysisResult.answer}
+                      {analysisResult.answer.replace(/\s*\[Page\s+[\d,\s]+\]/gi, "")}
                     </div>
                   </div>
-
-                  {/* Citations Panel */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      Page-Level Citations ({analysisResult.citations.length})
-                    </h4>
-                    {analysisResult.citations.length === 0 ? (
-                      <div className="flex items-center gap-2 p-4 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-300 text-xs">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>No citations found. The model did not locate sufficient source evidence in the documents.</span>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {analysisResult.citations.map((cite, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setActiveCitation(cite)}
-                            className={`p-3.5 rounded-xl border cursor-pointer text-xs transition ${
-                              activeCitation?.chunk_id === cite.chunk_id
-                                ? "bg-indigo-950/50 border-indigo-500 text-white"
-                                : "bg-zinc-950/40 border-zinc-800/80 text-zinc-300 hover:border-zinc-700"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="font-semibold text-indigo-400">
-                                Citation #{idx + 1}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 text-[10px] font-medium border border-indigo-500/20">
-                                Page {cite.page_numbers.join(", ")}
-                              </span>
-                            </div>
-                            <p className="text-zinc-400 line-clamp-3 text-[11px] italic">
-                              &ldquo;{cite.text_excerpt}&rdquo;
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Expanded Citation Preview */}
-                  {activeCitation && (
-                    <div className="p-4 rounded-xl bg-zinc-950 border border-indigo-500/30 text-xs space-y-2">
-                      <div className="flex items-center justify-between text-indigo-300 font-semibold">
-                        <span>Source Passage Excerpt (Page {activeCitation.page_numbers.join(", ")})</span>
-                        <span className="text-[10px] text-zinc-500">ID: {activeCitation.chunk_id.slice(0, 8)}...</span>
-                      </div>
-                      <p className="text-zinc-200 text-xs leading-relaxed">{activeCitation.text_excerpt}</p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

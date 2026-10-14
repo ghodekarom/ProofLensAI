@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from google import genai
@@ -20,9 +21,7 @@ You are ProofLens AI, an expert document analysis assistant.
 Your job is to answer questions and analyse documents based ONLY on the
 provided source passages. Do not use outside knowledge.
 
-For every claim in your response, include a citation using this format:
-[Page X] — where X is the 1-based page number from the source passage.
-If a claim spans multiple pages, cite all of them: [Page 3, 4].
+Do not include any page numbers, brackets, or citations in your response.
 
 If the answer is not found in the passages, say:
 "I could not find relevant information in the provided documents."
@@ -39,7 +38,7 @@ QUERY_TEMPLATE = """\
 
 Instructions:
 - Answer concisely using ONLY the context above.
-- Cite page numbers for every factual claim using [Page N] notation.
+- Do not include page numbers, citations, or references in your text.
 - If insufficient context, state so clearly.
 """
 
@@ -182,16 +181,17 @@ class LLMService:
         )
 
         answer_text, model_used = self._generate_with_fallback(contents, config)
+        clean_answer = re.sub(r"\s*\[Page\s+[\d,\s]+\]", "", answer_text).strip()
 
         citations = self._extract_citations(chunks)
 
         logger.info(
-            f"LLM analysis complete: {len(answer_text)} chars, "
+            f"LLM analysis complete: {len(clean_answer)} chars, "
             f"{len(chunks)} context chunks, {len(citations)} citations (model={model_used})"
         )
 
         return AnalysisResult(
-            answer=answer_text,
+            answer=clean_answer,
             citations=citations,
             model_used=model_used,
             chunks_used=len(chunks),
