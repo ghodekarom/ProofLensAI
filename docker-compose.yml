@@ -1,0 +1,22 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: prooflens_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prooflens
+      POSTGRES_PASSWORD: prooflens_local_only
+      POSTGRES_DB: prooflens
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prooflens -d prooflens"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
